@@ -4,14 +4,9 @@ import * as cheerio from "cheerio";
 
 const app = express();
 
-app.get("/", (req, res) => {
-    res.send("Scraper is running!");
-});
-
 app.get("/today", async (req, res) => {
     try {
         const url = "https://www.filgoal.com/matches";
-
         const { data } = await axios.get(url);
         const $ = cheerio.load(data);
 
@@ -20,18 +15,18 @@ app.get("/today", async (req, res) => {
         $(".match-card").each((i, el) => {
             const teamA = $(el).find(".teamA .teamName").text().trim();
             const teamB = $(el).find(".teamB .teamName").text().trim();
-            const time = $(el).find(".matchCardTime").text().trim();
             const score = $(el).find(".matchCardScore").text().trim();
+            const time = $(el).find(".matchCardTime").text().trim();
             const status = $(el).find(".matchStatus").text().trim();
             const league = $(el).find(".matchCardLeague").text().trim();
 
             matches.push({
                 teamA,
                 teamB,
-                time,
                 score,
+                time,
                 status,
-                league
+                league,
             });
         });
 
