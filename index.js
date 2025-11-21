@@ -5,12 +5,41 @@ import * as cheerio from "cheerio";
 const app = express();
 
 app.get("/", (req, res) => {
-    res.send("Working!");
+    res.send("Scraper is running!");
 });
 
-// API endpoint هنعمل فيه Scraping بعدين
 app.get("/today", async (req, res) => {
-    res.json({ message: "Scraping will be here" });
+    try {
+        const url = "https://www.filgoal.com/matches";
+
+        const { data } = await axios.get(url);
+        const $ = cheerio.load(data);
+
+        const matches = [];
+
+        $(".match-card").each((i, el) => {
+            const teamA = $(el).find(".teamA .teamName").text().trim();
+            const teamB = $(el).find(".teamB .teamName").text().trim();
+            const time = $(el).find(".matchCardTime").text().trim();
+            const score = $(el).find(".matchCardScore").text().trim();
+            const status = $(el).find(".matchStatus").text().trim();
+            const league = $(el).find(".matchCardLeague").text().trim();
+
+            matches.push({
+                teamA,
+                teamB,
+                time,
+                score,
+                status,
+                league
+            });
+        });
+
+        res.json(matches);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Scraping failed" });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
