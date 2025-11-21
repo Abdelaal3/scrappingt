@@ -1,44 +1,42 @@
 import express from "express";
-import axios from "axios";
-import * as cheerio from "cheerio";
+import puppeteer from "puppeteer";
 
 const app = express();
 
-app.get("/", (req, res) => {
-    res.send("Scraper is running!");
-});
-
 app.get("/today", async (req, res) => {
     try {
-        const url = "https://www.filgoal.com/matches/?date=2025-11-21";
-        const { data } = await axios.get(url, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept-Language": "en-US,en;q=0.9",
-            },
+        const url = "https://www.filgoal.com/matches";
+
+        const browser = await puppeteer.launch({
+            headless: "new",
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
         });
 
-        const $ = cheerio.load(data);
-        const matches = [];
+        const page = await browser.newPage();
+        await page.goto(url, { waitUntil: "networkidle2" });
 
-        $(".match-card").each((i, el) => {
-            const teamA = $(el).find(".teamA .teamName").text().trim();
-            const teamB = $(el).find(".teamB .teamName").text().trim();
-            const score = $(el).find(".matchCardScore").text().trim();
-            const time = $(el).find(".matchCardTime").text().trim();
-            const status = $(el).find(".matchStatus").text().trim();
-            const league = $(el).find(".matchCardLeague").text().trim();
+        // استنى لحد ما العناصر تظهر
+        await page.waitForSelector(".match-card", { timeout: 10000 });
 
-            matches.push({
-                teamA,
-                teamB,
-                score,
-                time,
-                status,
-                league,
+        const matches = await page.evaluate(() => {
+            const cards = document.querySelectorAll(".match-card");
+            const result = [];
+
+            cards.forEach((card) => {
+                const teamA = card.querySelector(".teamA .teamName")?.innerText.trim() || "";
+                const teamB = card.querySelector(".teamB .teamName")?.innerText.trim() || "";
+                const score = card.querySelector(".matchCardScore")?.innerText.trim() || "";
+                const time = card.querySelector(".matchCardTime")?.innerText.trim() || "";
+                const status = card.querySelector(".matchStatus")?.innerText.trim() || "";
+                const league = card.querySelector(".matchCardLeague")?.innerText.trim() || "";
+
+                result.push({ teamA, teamB, score, time, status, league });
             });
+
+            return result;
         });
+
+        await browser.close();
 
         res.json(matches);
     } catch (error) {
