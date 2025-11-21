@@ -5,7 +5,7 @@ const app = express();
 
 app.get("/today", async (req, res) => {
     try {
-        const url = "https://www.filgoal.com/matches";
+        const url = "https://www.filgoal.com/matches/?date=2025-11-21";
 
         const browser = await puppeteer.launch({
             headless: "new",
