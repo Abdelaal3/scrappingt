@@ -10,7 +10,7 @@ app.get("/", (req, res) => {
 
 app.get("/today", async (req, res) => {
     try {
-        const url = "https://www.filgoal.com/matches";
+        const url = "https://www.filgoal.com/matches/?date=2025-11-21";
         const { data } = await axios.get(url, {
             headers: {
                 "User-Agent":
