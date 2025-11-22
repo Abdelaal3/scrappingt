@@ -6,28 +6,33 @@ const app = express();
 
 app.get("/today", async (req, res) => {
     try {
-        const url = "https://www.worldfootball.net/competition/co20/england-championship/";
+        const url = "https://www.worldfootball.net/all_matches/";
         const { data } = await axios.get(url, {
             headers: {
                 "User-Agent":
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept-Language": "en-US,en;q=0.9",
             },
         });
 
         const $ = cheerio.load(data);
-
         const matches = [];
 
-        $(".match-card").each((i, el) => {
-            matches.push({
-                teamA: $(el).find(".teamA .teamName").text().trim(),
-                teamB: $(el).find(".teamB .teamName").text().trim(),
-                score: $(el).find(".matchCardScore").text().trim(),
-                time: $(el).find(".matchCardTime").text().trim(),
-                status: $(el).find(".matchStatus").text().trim(),
-                league: $(el).find(".matchCardLeague").text().trim(),
-            });
+        $("table.standard_tabelle tr").each((i, el) => {
+            const time = $(el).find("td:nth-child(1)").text().trim();
+            const tournament = $(el).find("td:nth-child(2)").text().trim();
+            const teamA = $(el).find("td:nth-child(3)").text().trim();
+            const result = $(el).find("td:nth-child(4)").text().trim();
+            const teamB = $(el).find("td:nth-child(5)").text().trim();
+
+            if (teamA && teamB) {
+                matches.push({
+                    time,
+                    tournament,
+                    teamA,
+                    result,
+                    teamB,
+                });
+            }
         });
 
         res.json(matches);
