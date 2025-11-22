@@ -4,33 +4,38 @@ import * as cheerio from "cheerio";
 
 const app = express();
 
-app.get("/today", async (req, res) => {
-    const url = "https://livescore.bz/";
+app.get("/news", async (req, res) => {
+  const url = "https://www.alwafd.news/5596662";
 
-    try {
-        const { data } = await axios.get(url, {
-            headers: {
-                "User-Agent": "Mozilla/5.0"
-            }
-        });
+  try {
+    const { data } = await axios.get(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+      },
+    });
 
-        const $ = cheerio.load(data);
-        const matches = [];
+    const $ = cheerio.load(data);
 
-        $(".score_row").each((i, el) => {
-            matches.push({
-                time: $(el).find(".score_time").text().trim(),
-                league: $(el).find(".score_tournament").text().trim(),
-                teamA: $(el).find(".score_home_txt").text().trim(),
-                score: $(el).find(".score_score").text().trim(),
-                teamB: $(el).find(".score_away_txt").text().trim(),
-            });
-        });
+    const title = $(".news-post h1").text().trim();
+    const date = $(".info time").text().trim();
 
-        res.json(matches);
-    } catch (err) {
-        res.status(500).json({ error: "Scraping failed", details: err.message });
-    }
+    const paragraphs = [];
+    $(".paragraph-list p").each((i, el) => {
+      paragraphs.push($(el).text().trim());
+    });
+
+    res.json({
+      title,
+      date,
+      paragraphs,
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      error: "Scraping failed",
+      details: err.message,
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
