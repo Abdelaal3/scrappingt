@@ -6,7 +6,7 @@ const app = express();
 
 app.get("/today", async (req, res) => {
     try {
-        const url = "https://www.yallakora.com/tag/65219/%D9%85%D9%88%D8%A7%D8%B9%D9%8A%D8%AF-%D9%85%D8%A8%D8%A7%D8%B1%D9%8A%D8%A7%D8%AA-%D8%A7%D9%84%D9%8A%D9%88%D9%85";
+        const url = "https://www.worldfootball.net/competition/co20/england-championship/";
         const { data } = await axios.get(url, {
             headers: {
                 "User-Agent":
