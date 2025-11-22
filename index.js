@@ -1,47 +1,38 @@
 import express from "express";
-import puppeteer from "puppeteer";
+import axios from "axios";
+import * as cheerio from "cheerio";
 
 const app = express();
 
 app.get("/today", async (req, res) => {
     try {
-        const url = "https://www.filgoal.com/matches/?date=2025-11-21";
-
-        const browser = await puppeteer.launch({
-            headless: "new",
-            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        const url = "https://www.filgoal.com/matches";
+        const { data } = await axios.get(url, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
         });
 
-        const page = await browser.newPage();
-        await page.goto(url, { waitUntil: "networkidle2" });
+        const $ = cheerio.load(data);
 
-        // استنى لحد ما العناصر تظهر
-        await page.waitForSelector(".match-card", { timeout: 10000 });
+        const matches = [];
 
-        const matches = await page.evaluate(() => {
-            const cards = document.querySelectorAll(".match-card");
-            const result = [];
-
-            cards.forEach((card) => {
-                const teamA = card.querySelector(".teamA .teamName")?.innerText.trim() || "";
-                const teamB = card.querySelector(".teamB .teamName")?.innerText.trim() || "";
-                const score = card.querySelector(".matchCardScore")?.innerText.trim() || "";
-                const time = card.querySelector(".matchCardTime")?.innerText.trim() || "";
-                const status = card.querySelector(".matchStatus")?.innerText.trim() || "";
-                const league = card.querySelector(".matchCardLeague")?.innerText.trim() || "";
-
-                result.push({ teamA, teamB, score, time, status, league });
+        $(".match-card").each((i, el) => {
+            matches.push({
+                teamA: $(el).find(".teamA .teamName").text().trim(),
+                teamB: $(el).find(".teamB .teamName").text().trim(),
+                score: $(el).find(".matchCardScore").text().trim(),
+                time: $(el).find(".matchCardTime").text().trim(),
+                status: $(el).find(".matchStatus").text().trim(),
+                league: $(el).find(".matchCardLeague").text().trim(),
             });
-
-            return result;
         });
-
-        await browser.close();
 
         res.json(matches);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Scraping failed" });
+    } catch (err) {
+        res.status(500).json({ error: "Scraping failed", details: err.message });
     }
 });
 
