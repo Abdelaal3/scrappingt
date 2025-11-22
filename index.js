@@ -1,37 +1,24 @@
 import express from "express";
 import axios from "axios";
-import * as cheerio from "cheerio";
 
 const app = express();
+const API_KEY = "YOUR_API_KEY";
 
 app.get("/today", async (req, res) => {
-    const url = "https://livescore.bz/";
-    
     try {
-        const { data } = await axios.get(url, {
-            headers: {
-                "User-Agent": "Mozilla/5.0"
+        const response = await axios.get(
+            "https://api.football-data.org/v4/matches",
+            {
+                headers: {
+                    "X-Auth-Token": API_KEY,
+                },
             }
-        });
+        );
 
-        const $ = cheerio.load(data);
-        const matches = [];
-
-        $(".score_row").each((i, el) => {
-            matches.push({
-                time: $(el).find(".score_time").text().trim(),
-                league: $(el).find(".score_tournament").text().trim(),
-                teamA: $(el).find(".score_home_txt").text().trim(),
-                score: $(el).find(".score_score").text().trim(),
-                teamB: $(el).find(".score_away_txt").text().trim(),
-            });
-        });
-
-        res.json(matches);
-    } catch (err) {
-        res.status(500).json({ error: "Scraping failed", details: err.message });
+        res.json(response.data.matches);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on port " + PORT));
+app.listen(3000, () => console.log("running"));
