@@ -1,26 +1,52 @@
+import express from "express";
 import axios from "axios";
+import * as cheerio from "cheerio";
 
-try {
-    const res = await axios.get(
-        "https://jdwel.com/wp-json/jmanager/web/v1/live/matches/",
-        {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122 Safari/537.36",
-                "Accept": "application/json, text/plain, */*",
-                "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
-                "Referer": "https://jdwel.com/today/",
-                "Origin": "https://jdwel.com",
-                "Sec-Fetch-Site": "same-origin",
-                "Sec-Fetch-Mode": "cors",
-                "Sec-Fetch-Dest": "empty",
-                "Accept-Encoding": "gzip, deflate, br",
-                "Connection": "keep-alive",
-            },
-        }
-    );
+const app = express();
 
-    console.log(res.data);
-} catch (err) {
-    console.log(err.response?.status, err.response?.data);
-}
+app.get("/matches", async (req, res) => {
+  try {
+    const url = "https://jdwel.com/today/";
+
+    const { data } = await axios.get(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept-Language": "ar",
+        "Referer": "https://jdwel.com/",
+      },
+    });
+
+    const $ = cheerio.load(data);
+    const matches = [];
+
+    $(".match_row").each((_, el) => {
+      const homeTeam = $(el).find(".hometeam .the_team").text().trim();
+      const awayTeam = $(el).find(".awayteam .the_team").text().trim();
+      const homeLogo = $(el).find(".hometeam img").attr("src");
+      const awayLogo = $(el).find(".awayteam img").attr("src");
+      const score = $(el).find(".match_score").text().trim();
+      const time = $(el).find(".the_time").text().trim();
+
+      matches.push({
+        homeTeam,
+        awayTeam,
+        score,
+        time,
+        homeLogo,
+        awayLogo,
+      });
+    });
+
+    res.json(matches);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
+      error: "Scraping failed",
+      details: err.message,
+    });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));
